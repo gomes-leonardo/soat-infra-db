@@ -42,10 +42,11 @@ jobs:
       TF_ENV: ${{ github.ref_name == 'main' && 'prd' || 'hml' }}
       DB_BACKEND: ${{ vars.DB_BACKEND || 'local' }}
       TF_VAR_neon_api_key: ${{ secrets.NEON_API_KEY }}
+      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
     steps:
       - name: Conferir configuracao
         run: |
-          if [ -z "${{ vars.AWS_ROLE_ARN }}" ]; then
+          if [ -z "$AWS_ROLE_ARN" ]; then
             echo "::error title=Apply sem configuracao::falta a variavel AWS_ROLE_ARN (ver README)"
             exit 1
           fi
@@ -54,6 +55,10 @@ jobs:
             exit 1
           fi
       - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+          terraform_wrapper: false
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}

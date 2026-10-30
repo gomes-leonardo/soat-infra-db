@@ -116,7 +116,7 @@ resource "kubernetes_deployment" "postgres" {
             value = "/var/lib/postgresql/data/pgdata"
           }
 
-          # Mesmo fuso que a aplicacao fixa na sessao: timestamps em UTC.
+          # Timestamps em UTC, como no Neon (o fuso fica no servidor, nao na conexao).
           env {
             name  = "TZ"
             value = "UTC"
