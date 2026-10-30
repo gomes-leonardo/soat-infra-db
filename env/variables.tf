@@ -40,3 +40,15 @@ variable "neon_region" {
   type        = string
   default     = "aws-sa-east-1"
 }
+
+variable "neon_api_key" {
+  description = "API key do Neon. Obrigatoria com db_backend = neon (no CI: TF_VAR_neon_api_key)."
+  type        = string
+  default     = ""
+  sensitive   = true
+
+  validation {
+    condition     = var.db_backend != "neon" || length(var.neon_api_key) > 0
+    error_message = "db_backend = neon exige neon_api_key."
+  }
+}

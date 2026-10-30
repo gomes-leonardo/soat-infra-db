@@ -46,5 +46,8 @@ provider "aws" {
   }
 }
 
-# Le NEON_API_KEY do ambiente. So e exigida quando db_backend = neon.
-provider "neon" {}
+# O provider exige uma chave na configuracao mesmo sem recurso nenhum dele.
+# No modo local vai um valor inerte: nenhuma chamada a API do Neon acontece.
+provider "neon" {
+  api_key = var.db_backend == "neon" ? var.neon_api_key : "inerte-modo-local"
+}

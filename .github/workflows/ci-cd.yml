@@ -41,7 +41,7 @@ jobs:
     env:
       TF_ENV: ${{ github.ref_name == 'main' && 'prd' || 'hml' }}
       DB_BACKEND: ${{ vars.DB_BACKEND || 'local' }}
-      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      TF_VAR_neon_api_key: ${{ secrets.NEON_API_KEY }}
     steps:
       - name: Conferir configuracao
         run: |
@@ -49,7 +49,7 @@ jobs:
             echo "::error title=Apply sem configuracao::falta a variavel AWS_ROLE_ARN (ver README)"
             exit 1
           fi
-          if [ "$DB_BACKEND" = "neon" ] && [ -z "$NEON_API_KEY" ]; then
+          if [ "$DB_BACKEND" = "neon" ] && [ -z "$TF_VAR_neon_api_key" ]; then
             echo "::error title=Neon sem chave::DB_BACKEND=neon exige o secret NEON_API_KEY"
             exit 1
           fi
