@@ -1,0 +1,75 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Terraform validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+      - run: terraform fmt -check -recursive
+      - name: Validate
+        run: |
+          for root in env reference/aws-rds; do
+            terraform -chdir=$root init -backend=false -input=false
+            terraform -chdir=$root validate
+          done
+
+  # develop -> hml, main -> prd. Roda no runner do Mac, que alcanca o Kind;
+  # o state fica no S3, acessado por OIDC. So em push, nunca em pull request.
+  apply:
+    name: Apply (${{ github.ref_name == 'main' && 'prd' || 'hml' }})
+    needs: [validate]
+    if: github.event_name == 'push'
+    runs-on: [self-hosted, soat-kind]
+    environment: ${{ github.ref_name == 'main' && 'prd' || 'hml' }}
+    concurrency: apply-${{ github.ref_name }}
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      TF_ENV: ${{ github.ref_name == 'main' && 'prd' || 'hml' }}
+      DB_BACKEND: ${{ vars.DB_BACKEND || 'local' }}
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+    steps:
+      - name: Conferir configuracao
+        run: |
+          if [ -z "${{ vars.AWS_ROLE_ARN }}" ]; then
+            echo "::error title=Apply sem configuracao::falta a variavel AWS_ROLE_ARN (ver README)"
+            exit 1
+          fi
+          if [ "$DB_BACKEND" = "neon" ] && [ -z "$NEON_API_KEY" ]; then
+            echo "::error title=Neon sem chave::DB_BACKEND=neon exige o secret NEON_API_KEY"
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: sa-east-1
+      - name: Terraform apply
+        working-directory: env
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=tfstate-backend-fiap-leo" \
+            -backend-config="key=soat-infra-db/env/${TF_ENV}/terraform.tfstate"
+          terraform apply -input=false -auto-approve \
+            -var "environment=${TF_ENV}" -var "db_backend=${DB_BACKEND}"
+      - name: Resumo
+        run: |
+          {
+            echo "## Banco ${TF_ENV}"
+            echo "- Backend: ${DB_BACKEND}"
+            echo "- Secret soat-db atualizado no namespace soat-${TF_ENV}"
+          } >> "$GITHUB_STEP_SUMMARY"
