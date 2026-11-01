@@ -90,7 +90,7 @@ Precisa de credencial AWS (o backend é S3, e o provider AWS sempre carrega) e d
 
 ```bash
 terraform -chdir=env init \
-  -backend-config="bucket=tfstate-backend-fiap-leo" \
+  -backend-config="bucket=soat-tfstate-933643054958" \
   -backend-config="key=soat-infra-db/env/hml/terraform.tfstate"
 terraform -chdir=env apply -var environment=hml -var db_backend=local
 ```
