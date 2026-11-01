@@ -75,9 +75,11 @@ repositórios.
 ### Ativar o Neon
 
 1. Criar a conta em [neon.com](https://neon.com) e gerar uma API key.
-2. Cadastrar a chave e trocar o modo:
+2. Cadastrar a chave, o ID da organização (Organization settings, formato `org-...`) e trocar o
+   modo:
    ```bash
    gh secret set NEON_API_KEY
+   gh variable set NEON_ORG_ID --body "org-..."
    gh variable set DB_BACKEND --body neon
    ```
 3. Disparar um novo deploy em `develop` e depois em `main`. Em seguida, fazer um redeploy da

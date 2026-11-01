@@ -42,6 +42,7 @@ jobs:
       TF_ENV: ${{ github.ref_name == 'main' && 'prd' || 'hml' }}
       DB_BACKEND: ${{ vars.DB_BACKEND || 'local' }}
       TF_VAR_neon_api_key: ${{ secrets.NEON_API_KEY }}
+      TF_VAR_neon_org_id: ${{ vars.NEON_ORG_ID }}
       AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
     steps:
       - name: Conferir configuracao
@@ -52,6 +53,10 @@ jobs:
           fi
           if [ "$DB_BACKEND" = "neon" ] && [ -z "$TF_VAR_neon_api_key" ]; then
             echo "::error title=Neon sem chave::DB_BACKEND=neon exige o secret NEON_API_KEY"
+            exit 1
+          fi
+          if [ "$DB_BACKEND" = "neon" ] && [ -z "$TF_VAR_neon_org_id" ]; then
+            echo "::error title=Neon sem organizacao::DB_BACKEND=neon exige a variavel NEON_ORG_ID"
             exit 1
           fi
       - uses: actions/checkout@v4
