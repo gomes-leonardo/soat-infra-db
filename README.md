@@ -9,8 +9,9 @@ Infraestrutura do banco de dados da oficina, parte da Fase 3 do Tech Challenge 1
 | [soat-auth-lambda](https://github.com/gomes-leonardo/soat-auth-lambda) | Funções serverless: autenticação por CPF e notificação |
 | [soat-infra-k8s](https://github.com/gomes-leonardo/soat-infra-k8s) | Cluster Kubernetes, gateway Kong e observabilidade |
 
-A justificativa da escolha do PostgreSQL e o modelo ER estão no repositório da aplicação, em
-[docs/database](https://github.com/gomes-leonardo/fiap-software-architecture/tree/main/docs/database).
+A justificativa da escolha do PostgreSQL e o modelo ER estão no repositório da aplicação:
+[justificativa do PostgreSQL](https://github.com/gomes-leonardo/fiap-software-architecture/blob/main/docs/database/justificativa-postgresql.md)
+e [modelo ER e relacionamentos](https://github.com/gomes-leonardo/fiap-software-architecture/blob/main/docs/database/modelo-er.md).
 
 ## Arquitetura
 
@@ -24,7 +25,7 @@ flowchart LR
     env -->|db_backend=neon| neon_mod --> neon[(Neon<br/>soat-hml / soat-prd<br/>aws-sa-east-1)]
     env -->|db_backend=local| local_mod --> pg[(Postgres no<br/>cluster Kind)]
     env -->|Secret soat-db| app[Aplicação<br/>namespace soat-env]
-    env -->|SSM /soat/env/db/url| lambda[Lambda<br/>auth-cpf]
+    env -->|"SSM /soat/env/db/url (só neon)"| lambda[Lambda<br/>auth-cpf]
     app -->|pooler, TLS| neon
     lambda -->|pooler, TLS| neon
 ```
@@ -51,7 +52,7 @@ banco novo.
 
 ## Tecnologias
 
-Terraform (providers `kislerdm/neon`, `hashicorp/kubernetes`, `hashicorp/aws`), Neon PostgreSQL 16,
+Terraform (providers `kislerdm/neon`, `hashicorp/kubernetes`, `hashicorp/aws`, `hashicorp/random`), Neon PostgreSQL 16,
 GitHub Actions com runner self-hosted e OIDC na AWS.
 
 **Custo zero:** plano gratuito do Neon, com 100 CU-hora por projeto por mês, 0,5 GB e suspensão
@@ -62,7 +63,7 @@ em 6 horas, o máximo do plano gratuito.
 
 | Evento | O que roda |
 |---|---|
-| Pull request para `develop` ou `main` | `terraform fmt` e `validate` (GitHub-hosted) |
+| Pull request para `develop` ou `main` | `terraform fmt -check` e `validate` de `env/` e `reference/aws-rds/` (GitHub-hosted) |
 | Push em `develop` | `terraform apply` do ambiente **hml**, no runner self-hosted |
 | Push em `main` | `terraform apply` do ambiente **prd** |
 
@@ -84,6 +85,9 @@ repositórios.
 
 ### Execução manual
 
+Precisa de credencial AWS (o backend é S3, e o provider AWS sempre carrega) e do contexto
+`kind-soat` no kubeconfig.
+
 ```bash
 terraform -chdir=env init \
   -backend-config="bucket=tfstate-backend-fiap-leo" \
@@ -95,5 +99,5 @@ terraform -chdir=env apply -var environment=hml -var db_backend=local
 
 - Swagger da API: [docs/swagger.json](https://github.com/gomes-leonardo/fiap-software-architecture/blob/main/docs/swagger.json)
 - Postman: [docs/postman-collection.json](https://github.com/gomes-leonardo/fiap-software-architecture/blob/main/docs/postman-collection.json)
-- Deploys: o resumo de cada run em *Actions* mostra o ambiente e o backend aplicado. O projeto Neon
+- Deploys: o resumo de cada run nas [execuções do Actions](https://github.com/gomes-leonardo/soat-infra-db/actions) mostra o ambiente e o backend aplicado. O projeto Neon
   de cada ambiente aparece no console do Neon como `soat-hml` e `soat-prd`.
