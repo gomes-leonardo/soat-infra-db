@@ -13,6 +13,7 @@ module "neon" {
   count       = var.db_backend == "neon" ? 1 : 0
   environment = var.environment
   region_id   = var.neon_region
+  org_id      = var.neon_org_id
 }
 
 locals {

@@ -12,6 +12,7 @@ terraform {
 
 resource "neon_project" "this" {
   name       = "soat-${var.environment}"
+  org_id     = var.org_id
   region_id  = var.region_id
   pg_version = 16
 

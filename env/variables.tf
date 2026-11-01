@@ -41,6 +41,17 @@ variable "neon_region" {
   default     = "aws-sa-east-1"
 }
 
+variable "neon_org_id" {
+  description = "ID da organizacao do Neon (org-...), em Organization settings. Obrigatorio com db_backend = neon."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.db_backend != "neon" || length(var.neon_org_id) > 0
+    error_message = "db_backend = neon exige neon_org_id."
+  }
+}
+
 variable "neon_api_key" {
   description = "API key do Neon. Obrigatoria com db_backend = neon (no CI: TF_VAR_neon_api_key)."
   type        = string
